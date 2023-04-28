@@ -11,6 +11,14 @@ if (!customElements.get('product-form')) {
       if (document.querySelector('cart-drawer')) this.submitButton.setAttribute('aria-haspopup', 'dialog');
     }
 
+    formDataToObject(formData) {
+      var obj = {};
+      formData.forEach(function(value, key){
+          obj[key] = value;
+      });
+      return obj;
+    }
+
     onSubmitHandler(evt) {
       evt.preventDefault();
       if (this.submitButton.getAttribute('aria-disabled') === 'true') return;
@@ -25,14 +33,27 @@ if (!customElements.get('product-form')) {
       config.headers['X-Requested-With'] = 'XMLHttpRequest';
       delete config.headers['Content-Type'];
 
-      const formData = new FormData(this.form);
+      const productFormData = this.formDataToObject(new FormData(this.form));
+      const formData = {};
+      formData['items'] = [productFormData];
       if (this.cart) {
-        formData.append('sections', this.cart.getSectionsToRender().map((section) => section.id));
-        formData.append('sections_url', window.location.pathname);
+        formData['sections'] = this.cart.getSectionsToRender().map((section) => section.id).toString();
+        formData['sections_url'] = window.location.pathname;
         this.cart.setActiveElement(document.activeElement);
       }
-      config.body = formData;
-
+      const customFormData = new FormData();
+      for (const key in formData) {
+        if (Array.isArray(formData[key])) {
+          for (let i = 0; i < formData[key].length; i++) {
+            for (const innerKey in formData[key][i]) {
+              customFormData.append(`items[${i}][${innerKey}]`, formData[key][i][innerKey]);
+            }
+          }
+        } else {
+          customFormData.append(key, formData[key]);
+        }
+      }
+      config.body = customFormData;
       fetch(`${routes.cart_add_url}`, config)
         .then((response) => response.json())
         .then((response) => {
@@ -50,12 +71,11 @@ if (!customElements.get('product-form')) {
             window.location = window.routes.cart_url;
             return;
           }
-
           this.error = false;
           const quickAddModal = this.closest('quick-add-modal');
           if (quickAddModal) {
             document.body.addEventListener('modalClosed', () => {
-              setTimeout(() => { this.cart.renderContents(response) });
+              setTimeout(() => { this.cart.renderContents(response)});
             }, { once: true });
             quickAddModal.hide(true);
           } else {
