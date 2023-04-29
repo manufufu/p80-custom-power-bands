@@ -7,6 +7,7 @@ if (!customElements.get('product-form')) {
       this.form.querySelector('[name=id]').disabled = false;
       this.form.addEventListener('submit', this.onSubmitHandler.bind(this));
       this.cart = document.querySelector('cart-notification') || document.querySelector('cart-drawer');
+      this.variantMetafields = document.getElementById('variant-metafields');
       this.submitButton = this.querySelector('[type="submit"]');
       if (document.querySelector('cart-drawer')) this.submitButton.setAttribute('aria-haspopup', 'dialog');
     }
@@ -35,7 +36,14 @@ if (!customElements.get('product-form')) {
 
       const productFormData = this.formDataToObject(new FormData(this.form));
       const formData = {};
-      formData['items'] = [productFormData];
+      formData['items'] = [];
+      formData['items'].push(productFormData);
+      if(this.variantMetafields){
+        const allSelects = this.variantMetafields.querySelectorAll('select');
+        allSelects.forEach(select=> {
+          formData['items'].push({id: select.options[select.selectedIndex].dataset.variantId, quantity: 1});
+        });
+      }
       if (this.cart) {
         formData['sections'] = this.cart.getSectionsToRender().map((section) => section.id).toString();
         formData['sections_url'] = window.location.pathname;

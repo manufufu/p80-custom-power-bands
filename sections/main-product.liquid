@@ -579,23 +579,22 @@
                 </noscript>
               {%- endunless -%}
               {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC{%- endcomment -%}
-              <div class="metafield-powerband">
+              <div class="metafield-powerband" id="variant-metafields">
                 {%- for product_reference in product.metafields.p80.custom_power_band_products.value -%}
+                  {%- assign productVariants = product_reference.variants -%}
                   {%- for product_reference in product_reference.options_with_values -%}
                     <label for="{{ product_reference.name }}-{{ forloop.index }}">
                       {{ product_reference.name }}
                       <select name="{{ product_reference.name }}-{{ forloop.index }}" id="{{ product_reference.name }}-{{ forloop.index }}" form="{{ product_form_id }}">
                         {%- for value in product_reference.values -%}
-                          <option value="45008267968786" {% if forloop.index0 == 0 %}selected{% endif %}>{{ value }}</option>
+                          {%- assign productVariant = product_reference.variants[forloop.index].id -%}
+                          <option data-variant-id="{{ productVariants[forloop.index0].id }}" value="{{ value }}" {% if forloop.index0 == 0 %}selected{% endif %}>{{ value }}</option>
                         {%- endfor -%}
                       </select>
                     </label>
                   {%- endfor -%}
                 {%- endfor -%}
               </div>
-              <script type="application/json">
-                {{ product.metafields.p80.custom_power_band_products.value | json }}
-              </script>
               {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC END{%- endcomment -%}
             {%- when 'buy_buttons' -%}
               <div {{ block.shopify_attributes }}>
