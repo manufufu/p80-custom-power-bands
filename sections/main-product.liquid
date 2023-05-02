@@ -474,77 +474,128 @@
               <script src="{{ 'share.js' | asset_url }}" defer="defer"></script>
             {%- when 'variant_picker' -%}
               {%- unless product.has_only_default_variant -%}
-                {%- if block.settings.picker_type == 'button' -%}
-                  <variant-radios
-                    class="no-js-hidden"
-                    data-section="{{ section.id }}"
-                    data-url="{{ product.url }}"
-                    {{ block.shopify_attributes }}
-                  >
-                    {%- for option in product.options_with_values -%}
-                      <fieldset class="js product-form__input">
-                        <legend class="form__label">{{ option.name }}</legend>
-                        {%- for value in option.values -%}
-                          <input
-                            type="radio"
-                            id="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}"
-                            name="{{ option.name }}"
-                            value="{{ value | escape }}"
-                            form="{{ product_form_id }}"
-                            {% if option.selected_value == value %}
-                              checked
-                            {% endif %}
-                          >
-                          <label for="{{ section.id }}-{{ option.position }}-{{ forloop.index0 }}">
-                            {{ value }}
-                          </label>
-                        {%- endfor -%}
-                      </fieldset>
-                    {%- endfor -%}
-                    <script type="application/json">
-                      {{ product.variants | json }}
-                    </script>
-                  </variant-radios>
-                {%- else -%}
-                  <variant-selects
-                    class="no-js-hidden"
-                    data-section="{{ section.id }}"
-                    data-url="{{ product.url }}"
-                    {{ block.shopify_attributes }}
-                  >
-                    {%- for option in product.options_with_values -%}
-                      <div class="product-form__input product-form__input--dropdown">
-                        <label class="form__label" for="Option-{{ section.id }}-{{ forloop.index0 }}">
-                          {{ option.name }}
+                <variant-mixed
+                  class="no-js-hidden"
+                  data-section="{{ section.id }}"
+                  data-url="{{ product.url }}"
+                  {{ block.shopify_attributes }}
+                >
+                  {% comment %} COLORS {% endcomment %}
+                  {%- assign optionColor = product.options_by_name.Color -%}
+                  {%- assign optionColorName = optionColor.name -%}
+                  {%- if optionColor -%}
+                    <fieldset class="js product-form__input product-form__input--color">
+                      <legend class="form__label">{{ optionColorName }}</legend>
+                      {%- for value in optionColor.values -%}
+                        <input
+                          type="radio"
+                          id="{{ section.id }}-{{ optionColor.position }}-{{ forloop.index }}"
+                          name="{{ optionColorName }}"
+                          value="{{ value | escape }}"
+                          form="{{ product_form_id }}"
+                          {% if optionColor.selected_value == value %}
+                            checked
+                          {% endif %}
+                        >
+                        <label
+                          style="--circle-color: {{ value }}"
+                          for="{{ section.id }}-{{ optionColor.position }}-{{ forloop.index }}"
+                        >
                         </label>
-                        <div class="select">
-                          <select
-                            id="Option-{{ section.id }}-{{ forloop.index0 }}"
-                            class="select__select"
-                            name="options[{{ option.name | escape }}]"
-                            form="{{ product_form_id }}"
-                          >
-                            {%- for value in option.values -%}
-                              <option
-                                value="{{ value | escape }}"
-                                {% if option.selected_value == value %}
-                                  selected="selected"
-                                {% endif %}
-                              >
-                                {{ value }}
-                              </option>
-                            {%- endfor -%}
-                          </select>
-                          {% render 'icon-caret' %}
-                        </div>
-                      </div>
-                    {%- endfor -%}
+                      {%- endfor -%}
+                    </fieldset>
+                  {%- endif -%}
+                  {% comment %} COLORS END {% endcomment %}
 
-                    <script type="application/json">
-                      {{ product.variants | json }}
-                    </script>
-                  </variant-selects>
-                {%- endif -%}
+                  {%- comment -%} SIZE {%- endcomment -%}
+                  {%- assign optionSize = product.options_by_name.Size -%}
+                  {%- assign optionSizeName = optionSize.name -%}
+                  {%- if optionSize -%}
+                    <div class="product-form__input product-form__input--dropdown">
+                      <label class="form__label" for="Option-{{ section.id }}-{{ forloop.index }}">
+                        {{ optionSizeName }}
+                      </label>
+                      <div class="select">
+                        <select
+                          id="Option-{{ section.id }}-{{ forloop.index }}"
+                          class="select__select"
+                          name="options[{{ optionSizeName | escape }}]"
+                          form="{{ product_form_id }}"
+                        >
+                          {%- for value in optionSize.values -%}
+                            <option
+                              value="{{ value | escape }}"
+                              {% if optionSize.selected_value == value %}
+                                selected="selected"
+                              {% endif %}
+                            >
+                              {{ value }}
+                            </option>
+                          {%- endfor -%}
+                        </select>
+                        {% render 'icon-caret' %}
+                      </div>
+                    </div>
+                  {%- endif -%}
+                  {%- comment -%} SIZE END{%- endcomment -%}
+
+                  {%- comment -%} ANY PRODUCT OPTIONS {%- endcomment -%}
+                  {%- if block.settings.picker_type == 'button' -%}
+                    {%- for option in product.options_with_values -%}
+                      {%- if option.name != 'Color' and option.name != 'Size' -%}
+                        <fieldset class="js product-form__input">
+                          <legend class="form__label">{{ option.name }}</legend>
+                          {%- for value in option.values -%}
+                            <input
+                              type="radio"
+                              id="{{ section.id }}-{{ option.position }}-{{ forloop.index }}"
+                              name="{{ option.name }}"
+                              value="{{ value | escape }}"
+                              form="{{ product_form_id }}"
+                              {% if option.selected_value == value %}
+                                checked
+                              {% endif %}
+                            >
+                            <label for="{{ section.id }}-{{ option.position }}-{{ forloop.index }}">
+                              {{ value }}
+                            </label>
+                          {%- endfor -%}
+                        </fieldset>
+                      {%- endif -%}
+                    {%- endfor -%}
+                  {%- else -%}
+                    {%- for option in product.options_with_values -%}
+                      {%- if option.name != 'Color' and option.name != 'Size' -%}
+                        <div class="product-form__input product-form__input--dropdown">
+                          <label class="form__label" for="Option-{{ section.id }}-{{ forloop.index }}">
+                            {{ option.name }}
+                          </label>
+                          <div class="select">
+                            <select
+                              id="Option-{{ section.id }}-{{ forloop.index }}"
+                              class="select__select"
+                              name="options[{{ option.name | escape }}]"
+                              form="{{ product_form_id }}"
+                            >
+                              {%- for value in option.values -%}
+                                <option
+                                  value="{{ value | escape }}"
+                                  {% if option.selected_value == value %}
+                                    selected="selected"
+                                  {% endif %}
+                                >
+                                  {{ value }}
+                                </option>
+                              {%- endfor -%}
+                            </select>
+                            {% render 'icon-caret' %}
+                          </div>
+                        </div>
+                      {%- endif -%}
+                    {%- endfor -%}
+                  {%- endif -%}
+                  {%- comment -%} ANY PRODUCT OPTIONS END {%- endcomment -%}
+                </variant-mixed>
                 <noscript class="product-form__noscript-wrapper-{{ section.id }}">
                   <div class="product-form__input{% if product.has_only_default_variant %} hidden{% endif %}">
                   <label class="form__label" for="Variants-{{ section.id }}">
@@ -578,26 +629,7 @@
                   </div>
                 </noscript>
               {%- endunless -%}
-              {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC{%- endcomment -%}
-              {%- if product.metafields.p80.custom_power_band_products.value != blank -%}
-                <div class="metafield-powerband" id="variant-metafields">
-                  {%- for product_reference in product.metafields.p80.custom_power_band_products.value -%}
-                    {%- assign productVariants = product_reference.variants -%}
-                    {%- for product_reference in product_reference.options_with_values -%}
-                      <label for="{{ product_reference.name }}">
-                        {{ product_reference.name }}
-                        <select name="properties[{{ product_reference.name }}]" id="{{ product_reference.name }}" form="{{ product_form_id }}">
-                          {%- for value in product_reference.values -%}
-                            {%- assign productVariant = product_reference.variants[forloop.index].id -%}
-                            <option data-variant-id="{{ productVariants[forloop.index0].id }}" value="{{ value }}" {% if forloop.index0 == 0 %}selected{% endif %}>{{ value }}</option>
-                          {%- endfor -%}
-                        </select>
-                      </label>
-                    {%- endfor -%}
-                  {%- endfor -%}
-                </div>
-              {%- endif -%}
-              {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC END{%- endcomment -%}
+
             {%- when 'buy_buttons' -%}
               <div {{ block.shopify_attributes }}>
                 <product-form class="product-form">

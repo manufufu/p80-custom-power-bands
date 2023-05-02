@@ -761,6 +761,8 @@ class VariantSelects extends HTMLElement {
     this.toggleAddButton(true, '', false);
     this.updatePickupAvailability();
     this.removeErrorMessage();
+    this.updateSelectedInput();
+    this.updateVolumeDiscounts();
 
     if (!this.currentVariant) {
       this.toggleAddButton(true, '', true);
@@ -776,13 +778,46 @@ class VariantSelects extends HTMLElement {
 
   updateOptions() {
     this.options = Array.from(this.querySelectorAll('select'), (select) => select.value);
+    console.log(this.options);
   }
 
   updateMasterId() {
     this.currentVariant = this.getVariantData().find((variant) => {
-      return !variant.options.map((option, index) => {
-        return this.options[index] === option;
-      }).includes(false);
+      return !variant.options
+        .map((option, index) => {
+          return this.options[index] === option;
+        })
+        .includes(false);
+    });
+  }
+
+  updateVolumeDiscounts() {
+    const volumeDiscounts = document.querySelector('.product__info-wrapper volume-discounts');
+    if (!volumeDiscounts) return;
+    volumeDiscounts.generate(this.currentVariant.price);
+  }
+
+  updateSelectedInput() {
+    const mixedVariantSelectors = document.querySelectorAll(
+      '[id^="MainProduct-"] select, [id^="MainProduct-"] fieldset'
+    );
+    const variantSelectors = document.querySelectorAll('[id^="MainProduct-sticky-"] select');
+
+    mixedVariantSelectors.forEach((element, index) => {
+      const selectInput = element.querySelectorAll('input');
+      if (selectInput.length > 0) {
+        selectInput.forEach((radio) => {
+          if (radio.value === this.options[index]) {
+            radio.checked = true;
+          }
+        });
+      } else {
+        element.value = this.options[index];
+      }
+    });
+
+    variantSelectors.forEach((variantSelector, index) => {
+      variantSelector.value = this.options[index];
     });
   }
 
@@ -791,17 +826,36 @@ class VariantSelects extends HTMLElement {
     if (!this.currentVariant.featured_media) return;
 
     const mediaGalleries = document.querySelectorAll(`[id^="MediaGallery-${this.dataset.section}"]`);
-    mediaGalleries.forEach(mediaGallery => mediaGallery.setActiveMedia(`${this.dataset.section}-${this.currentVariant.featured_media.id}`, true));
+    mediaGalleries.forEach((mediaGallery) =>
+      mediaGallery.setActiveMedia(`${this.dataset.section}-${this.currentVariant.featured_media.id}`, true)
+    );
+
+    const glideGalleries = document.querySelectorAll(
+      `[data-id=${this.dataset.section}-main-carousel], [data-id=${this.dataset.section}-secondary-carousel]`
+    );
+
+    glideGalleries.forEach((gallery) => {
+      if (gallery.glide) {
+        const slides = Array.from(gallery.querySelectorAll('li'));
+        const activeSlide = gallery.querySelector(
+          `[id^="${this.dataset.section}-${this.currentVariant.featured_media.id}"]`
+        );
+        if (activeSlide) {
+          const index = slides.indexOf(activeSlide);
+          gallery.glide.go(`=${index}`);
+        }
+      }
+    });
 
     const modalContent = document.querySelector(`#ProductModal-${this.dataset.section} .product-media-modal__content`);
     if (!modalContent) return;
-    const newMediaModal = modalContent.querySelector( `[data-media-id="${this.currentVariant.featured_media.id}"]`);
+    const newMediaModal = modalContent.querySelector(`[data-media-id="${this.currentVariant.featured_media.id}"]`);
     modalContent.prepend(newMediaModal);
   }
 
   updateURL() {
     if (!this.currentVariant || this.dataset.updateUrl === 'false') return;
-    window.history.replaceState({ }, '', `${this.dataset.url}?variant=${this.currentVariant.id}`);
+    window.history.replaceState({}, '', `${this.dataset.url}?variant=${this.currentVariant.id}`);
   }
 
   updateShareUrl() {
@@ -811,11 +865,13 @@ class VariantSelects extends HTMLElement {
   }
 
   updateVariantInput() {
-    const productForms = document.querySelectorAll(`#product-form-${this.dataset.section}, #product-form-installment-${this.dataset.section}`);
+    const productForms = document.querySelectorAll(
+      `#product-form-${this.dataset.section}, #product-form-installment-${this.dataset.section}, #product-form-sticky-${this.dataset.section}`
+    );
     productForms.forEach((productForm) => {
       const input = productForm.querySelector('input[name="id"]');
       input.value = this.currentVariant.id;
-      input.dispatchEvent(new Event('change', { bubbles: true }));
+      input.dispatchEvent(new Event('change', {bubbles: true}));
     });
   }
 
@@ -840,12 +896,18 @@ class VariantSelects extends HTMLElement {
   }
 
   renderProductInfo() {
-    fetch(`${this.dataset.url}?variant=${this.currentVariant.id}&section_id=${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`)
+    fetch(
+      `${this.dataset.url}?variant=${this.currentVariant.id}&section_id=${
+        this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section
+      }`
+    )
       .then((response) => response.text())
       .then((responseText) => {
-        const html = new DOMParser().parseFromString(responseText, 'text/html')
+        const html = new DOMParser().parseFromString(responseText, 'text/html');
         const destination = document.getElementById(`price-${this.dataset.section}`);
-        const source = html.getElementById(`price-${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`);
+        const source = html.getElementById(
+          `price-${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`
+        );
         if (source && destination) destination.innerHTML = source.innerHTML;
 
         const price = document.getElementById(`price-${this.dataset.section}`);
@@ -856,31 +918,41 @@ class VariantSelects extends HTMLElement {
   }
 
   toggleAddButton(disable = true, text, modifyClass = true) {
-    const productForm = document.getElementById(`product-form-${this.dataset.section}`);
-    if (!productForm) return;
-    const addButton = productForm.querySelector('[name="add"]');
-    const addButtonText = productForm.querySelector('[name="add"] > span');
-    if (!addButton) return;
-
-    if (disable) {
-      addButton.setAttribute('disabled', 'disabled');
-      if (text) addButtonText.textContent = text;
-    } else {
-      addButton.removeAttribute('disabled');
-      addButtonText.textContent = window.variantStrings.addToCart;
-    }
+    const productForms = document.querySelectorAll(
+      `#product-form-${this.dataset.section}, #product-form-sticky-${this.dataset.section}`
+    );
+    if (!productForms.length) return;
+    productForms.forEach((productForm) => {
+      const addButton = productForm.querySelector('[name="add"]');
+      const addButtonText = productForm.querySelector('[name="add"] > span');
+      if (addButton && addButtonText) {
+        if (disable) {
+          addButton.setAttribute('disabled', 'disabled');
+          if (text) addButtonText.textContent = text;
+        } else {
+          addButton.removeAttribute('disabled');
+          addButtonText.textContent = window.variantStrings.addToCart;
+        }
+      }
+    });
 
     if (!modifyClass) return;
   }
 
   setUnavailable() {
-    const button = document.getElementById(`product-form-${this.dataset.section}`);
-    const addButton = button.querySelector('[name="add"]');
-    const addButtonText = button.querySelector('[name="add"] > span');
-    const price = document.getElementById(`price-${this.dataset.section}`);
-    if (!addButton) return;
-    addButtonText.textContent = window.variantStrings.unavailable;
-    if (price) price.classList.add('visibility-hidden');
+    const productForms = document.querySelectorAll(
+      `#product-form-${this.dataset.section}, #product-form-sticky-${this.dataset.section}`
+    );
+    if (!productForms.length) return;
+    productForms.forEach((productForm) => {
+      const addButton = productForm.querySelector('[name="add"]');
+      const addButtonText = productForm.querySelector('[name="add"] > span');
+      const price = productForm.querySelector(`#price-${this.dataset.section}`);
+      if (addButton && addButtonText) {
+        addButtonText.textContent = window.variantStrings.unavailable;
+      }
+      if (price) price.classList.add('visibility-hidden');
+    });
   }
 
   getVariantData() {
@@ -905,6 +977,25 @@ class VariantRadios extends VariantSelects {
 }
 
 customElements.define('variant-radios', VariantRadios);
+
+class VariantMixed extends VariantSelects {
+  constructor() {
+    super();
+  }
+
+  updateOptions() {
+    const variantElements = Array.from(this.querySelectorAll('fieldset, select'));
+    this.options = variantElements.map((element) => {
+      if (element.querySelectorAll('input').length > 0) {
+        return Array.from(element.querySelectorAll('input')).find((radio) => radio.checked).value;
+      } else {
+        return element.value;
+      }
+    });
+  }
+}
+
+customElements.define('variant-mixed', VariantMixed);
 
 class ProductRecommendations extends HTMLElement {
   constructor() {
