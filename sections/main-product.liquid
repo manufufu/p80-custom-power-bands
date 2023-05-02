@@ -595,6 +595,39 @@
                     {%- endfor -%}
                   {%- endif -%}
                   {%- comment -%} ANY PRODUCT OPTIONS END {%- endcomment -%}
+
+              {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC{%- endcomment -%}
+              {%- if product.metafields.p80.custom_power_band_products.value != blank -%}
+                <div class="metafield-powerband" id="variant-metafields">
+                  {%- for product_reference in product.metafields.p80.custom_power_band_products.value -%}
+                    {%- assign productVariants = product_reference.variants -%}
+                    {%- for product_reference in product_reference.options_with_values -%}
+                      <label for="{{ product_reference.name }}">
+                        {{ product_reference.name }}
+                        <select name="properties[{{ product_reference.name }}]" id="{{ product_reference.name }}" form="{{ product_form_id }}">
+                          {%- for value in product_reference.values -%}
+                            {%- assign productVariant = product_reference.variants[forloop.index].id -%}
+                            <option data-variant-id="{{ productVariants[forloop.index0].id }}" value="{{ value }}" {% if forloop.index0 == 0 %}selected{% endif %}>{{ value }}</option>
+                          {%- endfor -%}
+                        </select>
+                      </label>
+                    {%- endfor -%}
+                  {%- endfor -%}
+                </div>
+              {%- endif -%}
+              {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC END{%- endcomment -%}
+
+                  <script type="application/json">
+                    {%- assign productVariants = product.variants | json -%}
+                    {%- for product_reference in product.metafields.p80.custom_power_band_products.value -%}
+                      {%- for product_variant in product_reference.variants -%}
+                        {%- capture bruhbruh -%}{{- product_variant | json | remove: '\' -}}{%- endcapture -%}
+                        {%- capture zxczx -%}[{{ productVariants | json | remove_first: '[' | remove_first: '"' | remove_last: ']' | remove_last: '"' | remove: '\' }}, {{ bruhbruh }}]{%- endcapture -%}
+                        {%- assign productVariants = zxczx -%}
+                      {%- endfor -%}
+                    {%- endfor -%}
+                    {{ productVariants }}
+                  </script>
                 </variant-mixed>
                 <noscript class="product-form__noscript-wrapper-{{ section.id }}">
                   <div class="product-form__input{% if product.has_only_default_variant %} hidden{% endif %}">
