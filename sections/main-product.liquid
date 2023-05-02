@@ -621,9 +621,9 @@
                     {%- assign productVariants = product.variants | json -%}
                     {%- for product_reference in product.metafields.p80.custom_power_band_products.value -%}
                       {%- for product_variant in product_reference.variants -%}
-                        {%- capture bruhbruh -%}{{- product_variant | json | remove: '\' -}}{%- endcapture -%}
-                        {%- capture zxczx -%}[{{ productVariants | json | remove_first: '[' | remove_first: '"' | remove_last: ']' | remove_last: '"' | remove: '\' }}, {{ bruhbruh }}]{%- endcapture -%}
-                        {%- assign productVariants = zxczx -%}
+                        {%- capture product_reference_variant -%}{{- product_variant | json | remove: '\' -}}{%- endcapture -%}
+                        {%- capture newProductVariants -%}[{{ productVariants | json | remove_first: '[' | remove_first: '"' | remove_last: ']' | remove_last: '"' | remove: '\' }}, {{ product_reference_variant }}]{%- endcapture -%}
+                        {%- assign productVariants = newProductVariants -%}
                       {%- endfor -%}
                     {%- endfor -%}
                     {{ productVariants }}
