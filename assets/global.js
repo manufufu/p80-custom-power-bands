@@ -949,23 +949,28 @@ class VariantSelects extends HTMLElement {
     )
       .then((response) => response.text())
       .then((responseText) => {
-        if(this.currentVariant.options.length !== this.options){
-          const filterMetafields = this.options.filter(option => !this.currentVariant.options.includes(option));
-          const metafieldPrice = [];
-          this.getVariantData().map(variant => {
-            filterMetafields.forEach(metaVariant => {
-              if(metaVariant == variant.option1){
-                metafieldPrice.push(variant.price);
-              }
-            });
-          });
-          console.log(metafieldPrice);
-        }
+        const metafieldPrice = [];
+        let metafieldPriceSum = 0;
         const html = new DOMParser().parseFromString(responseText, 'text/html');
         const destination = document.getElementById(`price-${this.dataset.section}`);
         const source = html.getElementById(
           `price-${this.dataset.originalSection ? this.dataset.originalSection : this.dataset.section}`
         );
+        const sourcePrice = source.querySelectorAll('span.price-item.price-item--regular, span.price-item.price-item--sale');
+        if(this.currentVariant.options.length !== this.options){
+          const filteredMetafields = this.options.filter(option => !this.currentVariant.options.includes(option));
+          this.getVariantData().map(variant => {
+            filteredMetafields.forEach(metaVariant => {
+              if(metaVariant == variant.option1){
+                metafieldPrice.push(variant.price);
+              }
+            });
+          });
+          metafieldPriceSum = metafieldPrice.reduce((accumulator, currentValue) => accumulator + currentValue, 0);
+          sourcePrice.forEach(el => {
+            el.textContent = `${Shopify.formatMoney(`${this.currentVariant.price + metafieldPriceSum}`)} ${Shopify.currency.active}`;
+          });
+        }
         if (source && destination) destination.innerHTML = source.innerHTML;
         const price = document.getElementById(`price-${this.dataset.section}`);
 
