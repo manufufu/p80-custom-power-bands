@@ -600,6 +600,14 @@
               {%- comment -%}METAFIELD CUSTOMER POWERBAND LOGIC{%- endcomment -%}
               {%- if product.metafields.p80.custom_power_band_products.value != blank -%}
                 <div class="metafield-powerband" id="variant-metafields">
+                  <label for="Length">
+                    Length
+                    <select name="properties[Length]" id="Length" form="{{ product_form_id }}">
+                      {% for i in (10..50) %}
+                        <option data-variant-id="0" value="{{ i }} inch" {% if forloop.index0 == 0 %}selected{% endif %}>{{ i }} inch</option>
+                      {% endfor %}
+                    </select>
+                  </label>
                   {%- for product_reference in product.metafields.p80.custom_power_band_products.value -%}
                     {%- assign productVariants = product_reference.variants -%}
                     {%- for product_reference in product_reference.options_with_values -%}
